@@ -11,4 +11,5 @@ def auth(request: AuthenticateSchema):
     return Login(JWTAuth()).execute(
         request.client_id,
         request.client_secret,
+        request.kind,
     )
