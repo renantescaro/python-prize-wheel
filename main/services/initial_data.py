@@ -1,5 +1,7 @@
+from datetime import date
 from typing import Optional
 from main.database.database import Database, select
+from main.database.models.client_model import Client
 from main.database.models.company_model import Company
 from main.database.models.user_model import User
 from main.helpers.enums.dot_env import DotEnvEnum
@@ -9,6 +11,8 @@ from main.services.auth.password_hash import PasswordHash
 
 class InitialData:
     def execute(self):
+        # self._insert_test_client()
+
         if not self._empty_database():
             return
 
@@ -52,5 +56,26 @@ class InitialData:
             name=USER_ADM,
             password=password,
             is_active=True,
+        )
+        Database().save(adm_user)
+
+    def _insert_test_client(self):
+        sql = select(Client)
+        client: Optional[Client] = Database().get_one(sql)
+
+        if client:
+            return
+
+        TEST_CLIENT = "test_client"
+        TEST_CLIENT_PASSWORD = "test_client_123"
+
+        password = PasswordHash().execute(TEST_CLIENT_PASSWORD)
+
+        adm_user = Client(
+            name=TEST_CLIENT,
+            birthday=date.today(),
+            document="test",
+            is_active=True,
+            password=password,
         )
         Database().save(adm_user)
