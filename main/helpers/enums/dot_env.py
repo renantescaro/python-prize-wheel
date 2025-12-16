@@ -1,0 +1,9 @@
+from enum import Enum
+
+
+class DotEnvEnum(Enum):
+    USER_ADM = "USER_ADM"
+    USER_ADM_PASSWORD = "USER_ADM_PASSWORD"
+    DATABASE_URI = "DATABASE_URI"
+    TOKEN_KEY = "TOKEN_KEY"
+    TOKEN_VALIDATE = "TOKEN_VALIDATE"
