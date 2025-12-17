@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class AuthenticateSchema(BaseModel):
-    client_id: int
+    client_login: str
     client_secret: str
     kind: str
 

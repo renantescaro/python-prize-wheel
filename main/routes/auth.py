@@ -9,7 +9,7 @@ router = APIRouter()
 @router.post("/auth")
 def auth(request: AuthenticateSchema):
     return Login(JWTAuth()).execute(
-        request.client_id,
+        request.client_login,
         request.client_secret,
         request.kind,
     )

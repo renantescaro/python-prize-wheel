@@ -6,6 +6,7 @@ from typing import Optional
 class Client(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(max_length=200)
+    login: str = Field(max_length=100, unique=True)
     password: str = Field(max_length=500)
     document: str = Field(max_length=20)
     birthday: date

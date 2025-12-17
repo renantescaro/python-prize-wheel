@@ -1,7 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from main.database.database import Database, select
-from main.database.models import campaign_item
 from main.database.models.campaign import Campaign
 from main.database.models.campaign_item import CampaignItem
 from main.database.models.client_model import Client

@@ -17,12 +17,12 @@ class Login:
     def __init__(self, jwt_auth: JWTAuth) -> None:
         self._jwt_auth = jwt_auth
 
-    def _get_user_by_id(self, id: int) -> Optional[User]:
-        query = select(User).where(User.id == id)
+    def _get_user_by_login(self, login: str) -> Optional[User]:
+        query = select(User).where(User.login == login)
         return Database().get_one(query)
 
-    def _get_client_by_id(self, id: int) -> Optional[Client]:
-        query = select(Client).where(Client.id == id)
+    def _get_client_by_login(self, login: str) -> Optional[Client]:
+        query = select(Client).where(Client.login == login)
         return Database().get_one(query)
 
     def _create_response(self, user_id: int, kind: str, company_id: Optional[int]):
@@ -53,14 +53,14 @@ class Login:
             hashed_password.encode("utf-8"),
         )
 
-    def execute(self, user_or_client_id: int, secret: str, kind: str):
+    def execute(self, login: str, secret: str, kind: str):
         user = None
 
         if kind == "user":
-            user = self._get_user_by_id(user_or_client_id)
+            user = self._get_user_by_login(login)
 
         if kind == "client":
-            user = self._get_client_by_id(user_or_client_id)
+            user = self._get_client_by_login(login)
 
         if user is None or not user.is_active:
             raise HTTPException(404, "user not found")
@@ -69,7 +69,7 @@ class Login:
             raise HTTPException(401, "wrong password")
 
         return self._create_response(
-            user_or_client_id,
+            user.id,
             kind,
             user.company_id if kind == "user" else None,
         )

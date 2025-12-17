@@ -16,6 +16,7 @@ router = APIRouter(prefix="/client")
 def new_client(body: NewClientParams):
     client = Client(
         name=body.name,
+        login=body.login,
         document=body.document,
         birthday=body.birthday,
         password=body.password,
@@ -69,6 +70,7 @@ def change_client(
     _password = PasswordHash().execute(body.password)
 
     client.name = body.name
+    client.login = body.login
     client.password = _password
     client.birthday = body.birthday
     client.is_active = body.is_active

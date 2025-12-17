@@ -23,4 +23,6 @@ class Spin(SQLModel, table=True):
             "account_id": self.account_id,
             "result_value": self.result_value,
             "prize_details": self.prize_details,
+            "campaign_id": self.campaign_id,
+            "campaign_item_winner_id": self.campaign_item_winner_id,
         }

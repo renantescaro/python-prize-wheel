@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from .auth import router as router_auth
+from .client.campaign import router as router_campaign
 from .client.client_account import router as router_client_account
 from .client.client import router as router_client
 from .client.test_client import router_protected as router_test_client
@@ -17,6 +18,7 @@ router = APIRouter()
 
 router.include_router(router_auth)
 router.include_router(router_client_account)
+router.include_router(router_campaign)
 router.include_router(router_client)
 router.include_router(router_company)
 router.include_router(router_dashboard)
