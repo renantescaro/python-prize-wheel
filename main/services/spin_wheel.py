@@ -19,19 +19,20 @@ class SpinWheel:
     ) -> None:
         self._client_id = client_id
         self._campaign_id = campaign_id
+        self._db = Database()
 
     def _get_account(self) -> Account:
         sql = select(Account).where(
             Account.client_id == self._client_id,
         )
-        account: Optional[Account] = Database().get_one(sql)
+        account: Optional[Account] = self._db.get_one(sql)
 
         if not account:
             client_account = Account(
                 client_id=self._client_id,
                 value=0,
             )
-            return Database().save(client_account)
+            return self._db.save(client_account)
 
         return account
 
@@ -40,13 +41,28 @@ class SpinWheel:
         account_id: int,
         spin_price: float,
     ):
+        """Cria a 'Transaction' do valor cobrado no giro da roleta"""
         debit_transaction = Transaction(
             client_id=self._client_id,
             account_id=account_id,
             value=-spin_price,
             transaction_type=TransactionType.DEBIT_SPIN,
         )
-        Database().save(debit_transaction)
+        self._db.save(debit_transaction)
+
+    def _create_credit_prize_transaction(
+        self,
+        account_id: int,
+        credit_prize: float,
+    ):
+        """Cria a 'Transaction' do valor ganho na roleta"""
+        transaction = Transaction(
+            client_id=self._client_id,
+            account_id=account_id,
+            value=credit_prize,
+            transaction_type=TransactionType.CREDIT_PRIZE,
+        )
+        self._db.save(transaction)
 
     def _draw_lots(self, campaign_items: list[CampaignItem]) -> CampaignItem:
         DIFFICULTY_FACTOR = 2.0
@@ -72,7 +88,7 @@ class SpinWheel:
         sql_items = select(CampaignItem).where(
             CampaignItem.campaign_id == self._campaign_id
         )
-        campaign_item: list[CampaignItem] = Database().get_all(sql_items)
+        campaign_item: list[CampaignItem] = self._db.get_all(sql_items)
 
         item_winner: CampaignItem = self._draw_lots(campaign_item)
 
@@ -84,11 +100,11 @@ class SpinWheel:
             campaign_id=self._campaign_id,
             campaign_item_winner_id=item_winner.id,
         )
-        return Database().save(spin)
+        return self._db.save(spin)
 
     def execute(self):
         sql = select(Campaign).where(Campaign.id == self._campaign_id)
-        campaign: Campaign = Database().get_one(sql)
+        campaign: Campaign = self._db.get_one(sql)
 
         account = self._get_account()
 
@@ -100,17 +116,17 @@ class SpinWheel:
 
         self._create_spin_transaction(account.id, campaign.spin_price)
 
-        # TODO: criar transaction
         account.value -= campaign.spin_price
         campaign.current_amount += campaign.spin_price
 
         spin = self._spin_wheel(account.id)
 
-        # TODO: criar transaction
         account.value += spin.result_value
         campaign.current_amount -= spin.result_value
 
-        Database().save(account)
-        Database().save(campaign)
+        self._create_credit_prize_transaction(account.id, spin.result_value)
+
+        self._db.save(account)
+        self._db.save(campaign)
 
         return spin.to_json()

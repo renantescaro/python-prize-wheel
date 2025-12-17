@@ -6,14 +6,14 @@ from main.database.models.account_model import Account
 from main.database.models.client_model import Client
 from main.database.models.user_model import User
 from main.schemas.client import NewClientParams, ChangeClientParams
-from main.services.auth.get_current_user import get_current_user
+from main.services.auth.get_current_client import get_current_client
 from main.services.auth.password_hash import PasswordHash
 
 router = APIRouter(prefix="/client")
 
 
 @router.post("/")
-def new_client(body: NewClientParams, id: int):
+def new_client(body: NewClientParams):
     client = Client(
         name=body.name,
         document=body.document,
@@ -34,21 +34,11 @@ def new_client(body: NewClientParams, id: int):
 
 
 @router.get("/")
-def client(current_user: User = Depends(get_current_user)):
-    sql = select(Client)
-    clients: Optional[list[Client]] = Database().get_all(sql)
-    if not clients:
-        return []
-
-    return [client.to_json() for client in clients]
-
-
-@router.get("/{id}")
-def client_by_id(
-    id: int,
-    current_user: User = Depends(get_current_user),
-):
-    sql = select(Client).where(Client.id == id)
+def client(current_client: Client = Depends(get_current_client)):
+    sql = select(Client).where(
+        Client.id == current_client.id,
+        Client.is_active == True,
+    )
     client: Optional[Client] = Database().get_one(sql)
     if not client:
         raise HTTPException(
@@ -59,19 +49,21 @@ def client_by_id(
     return client.to_json()
 
 
-@router.put("/{id}")
+@router.put("/")
 def change_client(
     body: ChangeClientParams,
-    id: int,
-    current_user: User = Depends(get_current_user),
+    current_client: Client = Depends(get_current_client),
 ):
-    sql = select(Client).where(Client.id == id)
+    sql = select(Client).where(
+        Client.id == current_client.id,
+        Client.is_active == True,
+    )
     client: Optional[Client] = Database().get_one(sql)
 
     if not client:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="user not found",
+            detail="Client not found",
         )
 
     _password = PasswordHash().execute(body.password)
@@ -85,17 +77,21 @@ def change_client(
     return changed_client.to_json()
 
 
-@router.delete("/{id}")
+@router.delete("/")
 def delete_client(
-    id: int,
-    current_user: User = Depends(get_current_user),
+    current_client: Client = Depends(get_current_client),
 ):
-    sql = select(Client).where(Client.id == id)
+    sql = select(Client).where(
+        Client.id == current_client.id,
+        Client.is_active == True,
+    )
     client: Optional[Client] = Database().get_one(sql)
+
     if not client:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Client not found",
         )
 
-    Database().delete(client)
+    client.is_active = False
+    Database().save(client)
