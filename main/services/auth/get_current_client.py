@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends, HTTPException, status
 from main.database.database import Database, select
@@ -33,9 +34,9 @@ def get_current_client(
     client_id = int(client_id_str)
 
     sql = select(Client).where(Client.id == client_id)
-    current_client = Database().get_one(sql)
+    current_client: Optional[Client] = Database().get_one(sql)
 
-    if current_client is None:
+    if current_client is None or current_client.is_active == False:
         # O token é válido, mas o cliente não existe mais no BD
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
