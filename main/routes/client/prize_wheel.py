@@ -1,61 +1,48 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from main.database.database import Database, select
-from main.database.models.account_model import Account
+from main.database.models import campaign_item
+from main.database.models.campaign import Campaign
+from main.database.models.campaign_item import CampaignItem
 from main.database.models.client_model import Client
-from main.database.models.spin_model import Spin
-from main.database.models.transaction_model import Transaction
-from main.helpers.enums.transaction_type import TransactionType
 from main.services.auth.get_current_client import get_current_client
+from main.services.spin_wheel import SpinWheel
 
 router_protected = APIRouter(prefix="/prize-wheel")
 
 
-@router_protected.get("/")
-def index(current_client: Client = Depends(get_current_client)):
-    return {}
+@router_protected.get("/{campaign}")
+def index(campaign: str, current_client: Client = Depends(get_current_client)):
+    sql = select(Campaign).where(Campaign.name == campaign)
+    _campaign: Optional[Campaign] = Database().get_one(sql)
 
+    sql_items = select(CampaignItem).where(CampaignItem.campaign_id == _campaign.id)
+    _campaign_item: Optional[list[CampaignItem]] = Database().get_all(sql_items)
 
-@router_protected.get("/spin")
-def spin(current_client: Client = Depends(get_current_client)):
-    SPIN_PRICE = 5.0
-
-    sql = select(Account).where(
-        Account.client_id == current_client.id,
-    )
-    account: Optional[Account] = Database().get_one(sql)
-
-    if not account:
-        client_account = Account(
-            client_id=current_client.id,
-            value=0,
-        )
-        account = Database().save(client_account)
-
-    if account.value < SPIN_PRICE:
+    if not _campaign or not _campaign_item:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Insufficient funds",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
         )
 
-    account.value -= SPIN_PRICE
+    return {
+        "campaign": _campaign.to_json(),
+        "items": [item.to_json() for item in _campaign_item],
+    }
 
-    debit_transaction = Transaction(
-        client_id=current_client.id,
-        account_id=account.id,
-        value=-SPIN_PRICE,
-        transaction_type=TransactionType.DEBIT_SPIN,
-    )
-    Database().save(debit_transaction)
 
-    # lógica do giro da roleta
-    result_value = 10
-    prize_details = f"Ganho de R$ {result_value} no giro da roleta"
+@router_protected.get("/spin/{campaign}")
+def spin(campaign: str, current_client: Client = Depends(get_current_client)):
+    sql = select(Campaign).where(Campaign.name == campaign)
+    _campaign: Optional[Campaign] = Database().get_one(sql)
 
-    spin = Spin(
-        client_id=current_client.id,
-        account_id=account.id,
-        result_value=result_value,
-        prize_details=prize_details,
-    )
-    Database().save(spin)
+    sql_items = select(CampaignItem).where(CampaignItem.campaign_id == _campaign.id)
+    _campaign_item: Optional[list[CampaignItem]] = Database().get_all(sql_items)
+
+    if not _campaign or not _campaign_item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
+        )
+
+    return SpinWheel(current_client.id, _campaign.id).execute()

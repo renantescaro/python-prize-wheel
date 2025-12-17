@@ -4,3 +4,5 @@ from .company_model import Company
 from .transaction_model import Transaction
 from .spin_model import Spin
 from .user_model import User
+from .campaign_item import CampaignItem
+from .campaign import Campaign
