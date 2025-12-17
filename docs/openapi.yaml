@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: Prize Wheel - Contrato do endpoint /spin
+  version: 0.0.1
+  description: |
+    Contrato de Fase 0 para execucao do Spin. Foca na clareza do fluxo transacional:
+    debitar saldo, sortear premio conforme distribuicao da campanha, respeitar idempotencia e limites conceituais.
+servers:
+  - url: /v1
+paths:
+  /spin:
+    post:
+      summary: Executa um spin para o cliente autenticado em uma campanha ativa.
+      tags:
+        - Spin
+      operationId: postSpin
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          description: Token Bearer do cliente autenticado.
+          schema:
+            type: string
+            example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Chave unica por spin. Requisicoes repetidas com a mesma chave retornam o mesmo resultado sem reexecutar o sorteio.
+          schema:
+            type: string
+            format: uuid
+            example: 5d6f2f04-b6b6-40d2-a06f-6fb0663f7f6d
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpinRequest'
+            examples:
+              valido:
+                summary: Request valido para campanha ativa
+                value:
+                  campaign: black-friday-2025
+                  request_reference: req-9a2c
+      responses:
+        '200':
+          description: Spin executado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpinResponse'
+              examples:
+                sucesso:
+                  summary: Spin com premio positivo
+                  value:
+                    spin_id: 0f9954df-7ea2-4d1e-92f4-5bb65f0e2c43
+                    campaign: black-friday-2025
+                    spin_price: 10.0
+                    prize:
+                      id: 3
+                      name: Bonus Prata
+                      value: 20.0
+                      probability: 13.0
+                    balance_before: 50.0
+                    balance_after: 60.0
+                    executed_at: 2025-12-17T03:00:00Z
+        '400':
+          description: Saldo insuficiente ou payload invalido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                saldo_insuficiente:
+                  summary: Cliente sem saldo para pagar o spin
+                  value:
+                    code: INSUFFICIENT_FUNDS
+                    message: Saldo insuficiente para executar o spin.
+        '409':
+          description: Conflito de idempotencia (spin ja processado para esta chave).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflito_idempotencia:
+                  value:
+                    code: IDEMPOTENCY_CONFLICT
+                    message: Spin ja registrado para este Idempotency-Key.
+        '429':
+          description: Limite de uso atingido (limite diario de spins ou de payout).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                limite_spin:
+                  value:
+                    code: SPIN_LIMIT_REACHED
+                    message: Limite diario de spins atingido para a campanha.
+                limite_payout:
+                  value:
+                    code: PAYOUT_LIMIT_REACHED
+                    message: Limite diario de premios atingido para a campanha.
+        '500':
+          description: Erro interno ao tentar registrar ou sortear o spin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                erro_interno:
+                  value:
+                    code: INTERNAL_ERROR
+                    message: Erro inesperado ao processar o spin. Tente novamente.
+
+components:
+  schemas:
+    SpinRequest:
+      type: object
+      required:
+        - campaign
+      properties:
+        campaign:
+          type: string
+          description: Slug ou identificador unico da campanha configurada.
+          example: black-friday-2025
+        request_reference:
+          type: string
+          description: Identificador opcional do parceiro/cliente para correlacao de logs.
+          example: req-9a2c
+    Prize:
+      type: object
+      required:
+        - id
+        - name
+        - value
+        - probability
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 3
+        name:
+          type: string
+          example: Bonus Prata
+        description:
+          type: string
+          example: Premio medio da campanha Black Friday.
+        value:
+          type: number
+          format: float
+          description: Valor do premio sorteado (0 para premio zero).
+          example: 20.0
+        probability:
+          type: number
+          format: float
+          description: Probabilidade percentual atribuida ao premio (0 a 100).
+          example: 13.0
+    SpinResponse:
+      type: object
+      required:
+        - spin_id
+        - campaign
+        - spin_price
+        - prize
+        - balance_after
+        - executed_at
+      properties:
+        spin_id:
+          type: string
+          format: uuid
+          description: Identificador unico do spin armazenado.
+          example: 0f9954df-7ea2-4d1e-92f4-5bb65f0e2c43
+        campaign:
+          type: string
+          example: black-friday-2025
+        spin_price:
+          type: number
+          format: float
+          description: Custo cobrado pelo spin para a campanha.
+          example: 10.0
+        prize:
+          $ref: '#/components/schemas/Prize'
+        balance_before:
+          type: number
+          format: float
+          description: Saldo do cliente antes do debito.
+          example: 50.0
+        balance_after:
+          type: number
+          format: float
+          description: Saldo do cliente apos debitar o spin e creditar o premio.
+          example: 60.0
+        executed_at:
+          type: string
+          format: date-time
+          example: 2025-12-17T03:00:00Z
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: INSUFFICIENT_FUNDS
+        message:
+          type: string
+          example: Saldo insuficiente para executar o spin.
+        details:
+          type: object
+          description: Campo opcional para incluir metadados do erro (ex.: limites atuais, saldo, referencia de requisicao).
