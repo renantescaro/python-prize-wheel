@@ -16,6 +16,7 @@ class User(SQLModel, table=True):
         return {
             "id": self.id,
             "name": self.name,
+            "login": self.login,
             "creation_date": self.creation_date,
             "company_id": self.company_id,
             "is_active": self.is_active,
