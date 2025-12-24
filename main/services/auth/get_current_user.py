@@ -16,17 +16,16 @@ def get_current_user(
         # Erro de decodificação, expiração ou token inválido
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido ou expirado.",
+            detail="Token do usuário inválido ou expirado.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     user_id_str = payload.get("sub")
-    print("user_id_str ->", user_id_str)
 
     if user_id_str is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token malformado: ID de usuário ausente.",
+            detail="Token do usuário malformado: ID de usuário ausente.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
