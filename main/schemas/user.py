@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -13,6 +14,7 @@ class ChangeCompanyParams(BaseModel):
 
 class NewUserParams(BaseModel):
     name: str
+    login: str
     password: str
     company_id: int
     is_active: bool
@@ -20,6 +22,7 @@ class NewUserParams(BaseModel):
 
 class ChangeUserParams(BaseModel):
     name: str
-    password: str
+    login: str
     company_id: int
     is_active: bool
+    password: Optional[str] = None

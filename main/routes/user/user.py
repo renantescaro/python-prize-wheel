@@ -38,15 +38,15 @@ def user_by_id(
 @router_protected.post("/")
 def new_user(
     body: NewUserParams,
-    id: int,
     current_user: User = Depends(get_current_user),
 ):
     _password = PasswordHash().execute(body.password)
 
     user = User(
         name=body.name,
+        login=body.login,
         password=_password,
-        company_id=body.company_id,
+        company_id=current_user.company_id,
         is_active=body.is_active,
     )
     new_user: User = Database().save(user)
@@ -68,11 +68,13 @@ def change_user(
             detail="user not found",
         )
 
-    _password = PasswordHash().execute(body.password)
+    if body.password:
+        _password = PasswordHash().execute(body.password)
+        user.password = _password
 
     user.name = body.name
-    user.password = _password
-    user.company_id = body.company_id
+    user.login = body.login
+    user.company_id = current_user.company_id
     user.is_active = body.is_active
     changed_user: User = Database().save(user)
 
@@ -93,3 +95,4 @@ def delete_user(
         )
 
     Database().delete(user)
+    return {}
