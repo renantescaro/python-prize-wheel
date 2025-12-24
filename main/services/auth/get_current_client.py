@@ -17,7 +17,7 @@ def get_current_client(
         # Erro de decodificação, expiração ou token inválido
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido ou expirado.",
+            detail="Token do cliente inválido ou expirado.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -27,7 +27,7 @@ def get_current_client(
     if client_id_str is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token malformado: ID de cliente ausente.",
+            detail="Token do cliente malformado: ID de cliente ausente.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

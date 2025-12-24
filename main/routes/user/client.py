@@ -7,7 +7,7 @@ from main.schemas.client import ChangeClientParams
 from main.services.auth.get_current_user import get_current_user
 from main.services.auth.password_hash import PasswordHash
 
-router = APIRouter(prefix="/client-control")
+router = APIRouter(prefix="/admin/client")
 
 
 @router.get("/")

@@ -16,7 +16,6 @@ def campaign(current_client: Client = Depends(get_current_client)):
         Campaign.start_date <= now,
         Campaign.end_date >= now,
     )
-    print("sql ===> ", sql)
     campaigns: Optional[list[Campaign]] = Database().get_all(sql)
 
     return [campaign.to_json() for campaign in campaigns] if campaigns else []
