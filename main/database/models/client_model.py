@@ -17,6 +17,7 @@ class Client(SQLModel, table=True):
         return {
             "id": self.id,
             "name": self.name,
+            "login": self.login,
             "document": self.document,
             "birthday": self.birthday,
             "creation_date": self.creation_date,
