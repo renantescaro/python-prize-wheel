@@ -1,6 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from main.database.database import Database, select
+from main.database.models.account_model import Account
 from main.database.models.client_model import Client
 from main.database.models.user_model import User
 from main.schemas.client import ChangeClientParams
@@ -33,7 +34,22 @@ def client_by_id(
             detail="Client not found",
         )
 
-    return client.to_json()
+    sql2 = select(Account).where(Account.client_id == client.id)
+    account: Optional[Account] = Database().get_one(sql2)
+    if not account:
+        return client.to_json()
+
+    return {
+        "id": client.id,
+        "name": client.name,
+        "login": client.login,
+        "document": client.document,
+        "birthday": client.birthday,
+        "creation_date": client.creation_date,
+        "is_active": client.is_active,
+        "account_id": account.id,
+        "account_value": account.value,
+    }
 
 
 @router.put("/{id}")
