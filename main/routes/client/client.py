@@ -14,16 +14,18 @@ router = APIRouter(prefix="/client")
 
 @router.post("/")
 def new_client(body: NewClientParams):
+    _password = PasswordHash().execute(body.password)
+
     client = Client(
         name=body.name,
         login=body.login,
         document=body.document,
         birthday=body.birthday,
-        password=body.password,
+        password=_password,
         creation_date=date.today(),
         is_active=True,
     )
-    new_client: User = Database().save(client)
+    new_client: Client = Database().save(client)
 
     client_account = Account(
         client_id=new_client.id,
