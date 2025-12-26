@@ -7,6 +7,7 @@ from .client.test_client import router_protected as router_test_client
 from .client.prize_wheel import router_protected as router_prize_wheel
 
 from .user.campaign import router as router_admin_campaign
+from .user.campaign_item import router as router_admin_campaign_items
 from .user.client import router as router_admin_client
 from .user.company import router_protected as router_company
 from .user.dashboard import router_protected as router_dashboard
@@ -20,6 +21,7 @@ router = APIRouter()
 router.include_router(router_auth)
 router.include_router(router_client_account)
 router.include_router(router_admin_campaign)
+router.include_router(router_admin_campaign_items)
 router.include_router(router_admin_client)
 router.include_router(router_company)
 router.include_router(router_campaign)

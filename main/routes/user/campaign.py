@@ -18,7 +18,7 @@ def campaign(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/{id}")
-def get_coampaign_by_id(
+def get_campaign_by_id(
     id: int,
     current_user: User = Depends(get_current_user),
 ):
