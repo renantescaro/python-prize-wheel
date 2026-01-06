@@ -11,7 +11,7 @@ from main.services.auth.password_hash import PasswordHash
 
 class InitialData:
     def execute(self):
-        # self._insert_test_client()
+        self._insert_test_client()
 
         if not self._empty_database():
             return
@@ -53,6 +53,7 @@ class InitialData:
 
         adm_user = User(
             company_id=company_id,
+            login=USER_ADM,
             name=USER_ADM,
             password=password,
             is_active=True,
@@ -68,6 +69,7 @@ class InitialData:
 
         TEST_CLIENT = "test_client"
         TEST_CLIENT_PASSWORD = "test_client_123"
+        TEST_CLIENT_LOGIN = "cliente@teste.com"
 
         password = PasswordHash().execute(TEST_CLIENT_PASSWORD)
 
@@ -77,5 +79,6 @@ class InitialData:
             document="test",
             is_active=True,
             password=password,
+            login=TEST_CLIENT_LOGIN,
         )
         Database().save(adm_user)
